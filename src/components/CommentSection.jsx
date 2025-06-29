@@ -5,16 +5,37 @@ export default function CommentSection() {
   const [name, setName] = useState('');
   const [comment, setComment] = useState('');
   const [commentsList, setCommentsList] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim() || !comment.trim()) return;
 
-    const newComment = { name, comment };
-    setCommentsList([newComment, ...commentsList]);
+    setLoading(true);
 
-    setName('');
-    setComment('');
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE}/api/comment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, message: comment })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        const newComment = {
+          name: data.received.name,
+          comment: data.received.message
+        };
+        setCommentsList([newComment, ...commentsList]);
+        setName('');
+        setComment('');
+      }
+    } catch (error) {
+      console.error('Failed to send comment:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -34,7 +55,9 @@ export default function CommentSection() {
           onChange={(e) => setComment(e.target.value)}
           required
         ></textarea>
-        <button type="submit">Send</button>
+        <button type="submit" disabled={loading}>
+          {loading ? 'Sending...' : 'Send'}
+        </button>
       </form>
 
       <div className="comments-list">
