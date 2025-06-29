@@ -8,7 +8,6 @@ export default function Navbar() {
   };
 
   useEffect(() => {
-    // منع سكرول لما القائمة مفتوحة
     document.body.style.overflow = isOpen ? 'hidden' : 'auto';
     return () => {
       document.body.style.overflow = 'auto';

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../App.css";
 
 export default function CommentSection() {
@@ -7,6 +7,24 @@ export default function CommentSection() {
   const [commentsList, setCommentsList] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const API_BASE = import.meta.env.VITE_API_BASE;
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/comments`);
+        const data = await res.json();
+        if (data.success) {
+          setCommentsList(data.comments);
+        }
+      } catch (error) {
+        console.error("Failed to fetch comments:", error);
+      }
+    };
+
+    fetchComments();
+  }, [API_BASE]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim() || !comment.trim()) return;
@@ -14,7 +32,7 @@ export default function CommentSection() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE}/api/comment`, {
+      const res = await fetch(`${API_BASE}/api/comment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, message: comment }),
@@ -23,10 +41,7 @@ export default function CommentSection() {
       const data = await res.json();
 
       if (data.success) {
-        const newComment = {
-          name: data.received.name,
-          comment: data.received.message,
-        };
+        const newComment = data.received;
         setCommentsList([newComment, ...commentsList]);
         setName("");
         setComment("");
@@ -40,52 +55,75 @@ export default function CommentSection() {
 
   return (
     <section id="comments" className="section">
-      <h2 className="section-title">Send Us Your Wishes</h2>
-      <form onSubmit={handleSubmit} className="comment-form">
-        <input
-          type="text"
-          placeholder="Your Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-        <textarea
-          placeholder="Your Comment"
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          required
-        ></textarea>
-        <button type="submit" disabled={loading}>
-          {loading ? "Sending..." : "Send"}
-        </button>
-      </form>
+      <div className="container">
+        <h2 className="section-title">Send Us Your Wishes</h2>
+        <form onSubmit={handleSubmit} className="comment-form">
+          <input
+            type="text"
+            placeholder="Your Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+          <textarea
+            placeholder="Your Comment"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            required
+            maxLength={200}
+          />
+          <div className="char-counter">{comment.length} / 200 characters</div>
+          <button type="submit" disabled={loading}>
+            {loading ? "Sending..." : "Send"}
+          </button>
+        </form>
 
-      <div className="comments-list">
-        {commentsList.map((c, idx) => {
-          const initial = c.name.charAt(0).toUpperCase();
+        <div className="comments-list">
+          {commentsList.map((c, idx) => {
+            const initial = c.name.charAt(0).toUpperCase();
 
-          // ألوان عشوائية ثابتة بناءً على index
-          const colors = [
-            "#f4a261",
-            "#2a9d8f",
-            "#e76f51",
-            "#264653",
-            "#e9c46a",
-          ];
-          const color = colors[idx % colors.length];
+            const colors = [
+              "#f4a261",
+              "#2a9d8f",
+              "#e76f51",
+              "#264653",
+              "#e9c46a",
+              "#9b5de5",
+              "#00bbf9",
+              "#ff006e",
+              "#3a86ff",
+              "#fb5607",
+              "#06d6a0",
+              "#ef476f",
+            ];
+            const color = colors[idx % colors.length];
 
-          return (
-            <div key={idx} className="comment-card">
-              <div className="comment-header">
-                <div className="avatar" style={{ backgroundColor: color }}>
-                  {initial}
+            return (
+              <div key={idx} className="comment-card">
+                <div className="comment-header">
+                  <div className="avatar" style={{ backgroundColor: color }}>
+                    {initial}
+                  </div>
+                  <span className="comment-name">{c.name}</span>
                 </div>
-                <span className="comment-name">{c.name}</span>
+                <div className="comment-body">{c.message}</div>
+                {c.created_at && (
+                  <div className="comment-time">
+                    {new Date(c.created_at)
+                      .toLocaleString("en-US", {
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      })}
+                  </div>
+                )}
               </div>
-              <div className="comment-body">{c.comment}</div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </section>
   );
